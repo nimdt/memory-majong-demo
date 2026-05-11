@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Memory Majong</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="app">
+      <header class="hero">
+        <div class="hero-copy">
+          <h1>Memory Majong</h1>
+          <p class="subtitle">A stacked Mahjong table with classic matching, a memory mode, and a calm polished feel.</p>
+        </div>
+
+        <div class="hero-actions">
+          <div class="picker-stack">
+            <div class="mode-picker" role="group" aria-label="Layout difficulty">
+              <button class="mode-button layout-button is-active" data-layout="easy" type="button">Turtle Garden</button>
+              <button class="mode-button layout-button" data-layout="classic" type="button">Dragon Bridge</button>
+              <button class="mode-button layout-button" data-layout="grand" type="button">Fortress of Winds</button>
+            </div>
+            <div class="mode-picker" role="group" aria-label="Game mode">
+              <button class="mode-button game-mode-button is-active" data-game-mode="normal" type="button">Mahjong</button>
+              <button class="mode-button game-mode-button" data-game-mode="memory" type="button">Memory Mahjong</button>
+            </div>
+          </div>
+          <button id="hint-button" class="secondary-button" type="button">Hint</button>
+          <button id="reshuffle-button" class="secondary-button" type="button">Reshuffle</button>
+          <button id="new-game" class="primary-button" type="button">New Layout</button>
+          <button id="sound-toggle" class="secondary-button" type="button" aria-pressed="true">Sound: On</button>
+        </div>
+      </header>
+
+      <section class="stats" aria-label="Game status">
+        <div class="stat-card accent-gold">
+          <span class="stat-label">Moves</span>
+          <strong id="moves">0</strong>
+        </div>
+        <div class="stat-card accent-red">
+          <span class="stat-label">Cleared pairs</span>
+          <strong id="matches">0 / 18</strong>
+        </div>
+        <div class="stat-card accent-green">
+          <span class="stat-label">Free matches</span>
+          <strong id="streak">0</strong>
+        </div>
+        <div class="stat-card accent-blue">
+          <span class="stat-label">Best clear</span>
+          <strong id="best-score">—</strong>
+        </div>
+        <div class="stat-card accent-gold">
+          <span class="stat-label">Time</span>
+          <strong id="elapsed-time">00:00</strong>
+        </div>
+      </section>
+
+      <section class="table-shell">
+        <div class="table-top">
+          <div>
+            <h2>Play table</h2>
+            <p id="status-text" class="table-subtitle">Only free tiles can be lifted — a tile needs open air above and a free left or right edge.</p>
+          </div>
+          <div class="top-pills">
+            <div id="progress-pill" class="progress-pill">0 / 18 pairs cleared</div>
+            <div id="layout-pill" class="ghost-pill">Dragon Bridge</div>
+            <div id="game-mode-pill" class="ghost-pill">Classic mode</div>
+          </div>
+        </div>
+
+        <div class="board-wrap">
+          <div id="board" class="board" aria-label="Mahjong solitaire board" role="grid"></div>
+          <div id="table-glow" class="table-glow" aria-hidden="true"></div>
+        </div>
+      </section>
+
+      <section class="how-to">
+        <h2>How to play</h2>
+        <ul>
+          <li>Pick two matching <strong>free</strong> tiles to remove them.</li>
+          <li>A tile is free when nothing sits on top of it and at least one side edge is open.</li>
+          <li>Switch to <strong>Memory Mahjong</strong> if you want the same board hidden and revealed as you play.</li>
+          <li>Use <strong>Hint</strong> if you want one free matching pair highlighted.</li>
+          <li>Keyboard shortcuts: <strong>N</strong> new layout, <strong>H</strong> hint, <strong>R</strong> reshuffle, <strong>M</strong> toggle memory mode, <strong>1/2/3</strong> switch layouts.</li>
+        </ul>
+      </section>
+    </main>
+
+    <dialog id="win-dialog" class="win-dialog">
+      <form method="dialog" class="win-card">
+        <p class="eyebrow">Beautiful work</p>
+        <h2>You cleared the table 🎉</h2>
+        <p id="win-summary"></p>
+        <div class="dialog-actions">
+          <button class="primary-button" id="play-again" value="play-again">Play again</button>
+          <button class="secondary-button" value="close">Close</button>
+        </div>
+      </form>
+    </dialog>
+
+    <script type="module" src="game.js"></script>
+  </body>
+</html>
