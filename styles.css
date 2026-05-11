@@ -51,7 +51,7 @@ body::after {
     radial-gradient(circle at 68% 76%, rgba(245,200,107,0.16) 0 1px, transparent 2px),
     radial-gradient(circle at 24% 82%, rgba(105,183,255,0.12) 0 1px, transparent 2px);
 }
-button { font: inherit; }
+button { font: inherit; touch-action: manipulation; }
 .app { width: min(1280px, calc(100% - 32px)); margin: 0 auto; padding: 32px 0 48px; }
 .hero,.stat-card,.table-shell,.how-to,.win-card {
   background: var(--panel);
@@ -99,6 +99,9 @@ h2 { margin-bottom:8px; }
   display:flex;
   justify-content:center;
   align-items:flex-start;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  touch-action: pan-x pan-y;
   background:
     radial-gradient(circle at center, rgba(60, 191, 138, 0.09), transparent 40%),
     linear-gradient(180deg, rgba(255,255,255,0.03), rgba(0,0,0,0.12)),
@@ -246,15 +249,74 @@ h2 { margin-bottom:8px; }
 .win-dialog::backdrop { background:rgba(2,6,23,.7); backdrop-filter:blur(6px); }
 .win-card { width:min(92vw,430px); padding:28px; }
 .dialog-actions { display:flex; gap:12px; margin-top:22px; }
-@media (max-width:780px) {
-  .app { width:min(100% - 20px,700px); padding-top:22px; }
+@media (max-width:900px) {
+  :root {
+    --tile-width: 74px;
+    --tile-height: 96px;
+    --step-x: 34px;
+    --step-y: 49px;
+    --lift-x: 8px;
+    --lift-y: 8px;
+  }
+
+  .app { width:min(100% - 20px,840px); padding-top:22px; }
   .hero,.table-top { flex-direction:column; align-items:stretch; }
   .hero-actions,.top-pills { justify-content:stretch; }
+  .hero-actions > button,
+  .picker-stack,
+  .mode-picker {
+    width: 100%;
+  }
+  .mode-picker { justify-content:space-between; }
+  .mode-button,
+  .primary-button,
+  .secondary-button {
+    min-height: 46px;
+  }
+  .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
-@media (max-width:520px) {
-  .board-wrap { padding:10px; }
+@media (max-width:640px) {
+  :root {
+    --tile-width: 66px;
+    --tile-height: 88px;
+    --step-x: 30px;
+    --step-y: 45px;
+    --lift-x: 7px;
+    --lift-y: 7px;
+  }
+
+  .board-wrap { padding:12px 8px; }
+  .board-wrap::before { inset: 8px; background-size: 42px 42px; }
   .dialog-actions,.hero-actions { flex-direction:column; }
-  .mode-picker { width:100%; justify-content:space-between; }
+  .mode-picker { gap: 6px; }
+  .mode-button {
+    flex: 1 1 calc(50% - 6px);
+    text-align: center;
+    padding: 10px 12px;
+  }
+  .stat-card { padding:16px; }
+  .stat-card strong { font-size:1.25rem; }
+  .tile-glyph { font-size: 3rem; }
+  .how-to { padding:18px; }
+}
+@media (max-width:480px) {
+  :root {
+    --tile-width: 58px;
+    --tile-height: 78px;
+    --step-x: 26px;
+    --step-y: 39px;
+    --lift-x: 6px;
+    --lift-y: 6px;
+  }
+
+  .app { width: min(100% - 12px, 520px); }
+  .hero, .table-shell, .how-to, .stat-card, .win-card { border-radius: 18px; }
+  .hero { padding: 18px; }
+  h1 { font-size: 1.7rem; }
+  .stats { grid-template-columns: 1fr; gap: 10px; }
+  .progress-pill, .ghost-pill { white-space: normal; }
+  .table-shell { padding: 12px; }
+  .tile-glyph { font-size: 2.5rem; }
 }
 
 @media (prefers-reduced-motion: reduce) {

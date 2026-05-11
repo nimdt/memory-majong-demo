@@ -17,10 +17,6 @@ const SOUND_KEY = 'mahjong-solitaire-deluxe-sound-v1';
 const LAYOUT_KEY = 'mahjong-solitaire-deluxe-layout-v1';
 const GAME_MODE_KEY = 'mahjong-solitaire-deluxe-game-mode-v1';
 const SAVE_KEY = 'memory-majong-save-v2';
-const X_STEP = 38;
-const Y_STEP = 54;
-const Z_SHIFT_X = 10;
-const Z_SHIFT_Y = 10;
 
 const boardEl = document.querySelector('#board');
 const movesEl = document.querySelector('#moves');
@@ -288,6 +284,22 @@ function bestLabel() {
   return best ? `${best} moves` : '—';
 }
 
+function readPxVar(name, fallback) {
+  const value = Number.parseFloat(getComputedStyle(document.documentElement).getPropertyValue(name));
+  return Number.isFinite(value) ? value : fallback;
+}
+
+function getLayoutMetrics() {
+  return {
+    stepX: readPxVar('--step-x', 38),
+    stepY: readPxVar('--step-y', 54),
+    liftX: readPxVar('--lift-x', 10),
+    liftY: readPxVar('--lift-y', 10),
+    tileWidth: readPxVar('--tile-width', 82),
+    tileHeight: readPxVar('--tile-height', 106)
+  };
+}
+
 function updateLayoutButtons() {
   layoutButtons.forEach((button) => {
     const active = button.dataset.layout === currentLayout;
@@ -433,13 +445,14 @@ function render() {
 
   const activeTiles = state.tiles.filter((tile) => !tile.removed);
   const boundsTiles = activeTiles.length > 0 ? activeTiles : state.tiles;
+  const { stepX, stepY, liftX, liftY, tileWidth, tileHeight } = getLayoutMetrics();
   const minX = Math.min(...boundsTiles.map((tile) => tile.x));
   const maxX = Math.max(...boundsTiles.map((tile) => tile.x));
   const minY = Math.min(...boundsTiles.map((tile) => tile.y));
   const maxY = Math.max(...boundsTiles.map((tile) => tile.y));
   const maxZ = Math.max(...boundsTiles.map((tile) => tile.z));
-  boardEl.style.setProperty('--board-width', `${(maxX - minX) * X_STEP + 82 + maxZ * Z_SHIFT_X}px`);
-  boardEl.style.setProperty('--board-height', `${(maxY - minY) * Y_STEP + 122}px`);
+  boardEl.style.setProperty('--board-width', `${(maxX - minX) * stepX + tileWidth + maxZ * liftX}px`);
+  boardEl.style.setProperty('--board-height', `${(maxY - minY) * stepY + tileHeight + 16}px`);
 
   const freeIds = new Set(state.tiles.filter((tile) => isTileFree(state, tile)).map((tile) => tile.uid));
 
@@ -459,8 +472,8 @@ function render() {
     button.dataset.accent = tile.accent;
     button.setAttribute('role', 'gridcell');
     button.setAttribute('aria-label', `${tile.name}${freeIds.has(tile.uid) ? ', free tile' : ', blocked tile'}`);
-    button.style.left = `${(tile.x - minX) * X_STEP + tile.z * Z_SHIFT_X}px`;
-    button.style.top = `${(tile.y - minY) * Y_STEP - tile.z * Z_SHIFT_Y}px`;
+    button.style.left = `${(tile.x - minX) * stepX + tile.z * liftX}px`;
+    button.style.top = `${(tile.y - minY) * stepY - tile.z * liftY}px`;
     button.style.zIndex = String(tile.z * 100 + tile.y * 10 + tile.x + (tile.selected ? 1000 : 0));
     button.innerHTML = concealed ? `
       <span class="tile-side" aria-hidden="true"></span>
