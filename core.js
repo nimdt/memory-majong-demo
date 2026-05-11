@@ -85,7 +85,7 @@ export const GAME_MODES = {
   }
 };
 
-export const DEFAULT_GAME_MODE = 'normal';
+export const DEFAULT_GAME_MODE = 'memory';
 
 export function getLayoutConfig(layoutKey = DEFAULT_LAYOUT) {
   return LAYOUTS[layoutKey] ?? LAYOUTS[DEFAULT_LAYOUT];
