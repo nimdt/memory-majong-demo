@@ -76,7 +76,7 @@ function formatElapsed(ms) {
 }
 
 function stopTimer() {
-  if (state?.timerStartedAt) {
+  if (state && state.timerStartedAt) {
     state.elapsedMs = getElapsedMs();
     state.timerStartedAt = null;
   }
@@ -95,8 +95,9 @@ function startTimer() {
 
 function loadBestScores() {
   try {
-    return JSON.parse(window.localStorage.getItem(BEST_KEY) ?? '{}');
-  } catch {
+    const raw = window.localStorage.getItem(BEST_KEY);
+    return JSON.parse(raw == null ? '{}' : raw);
+  } catch (error) {
     return {};
   }
 }
@@ -106,8 +107,8 @@ function loadSavedGame() {
     const raw = window.localStorage.getItem(SAVE_KEY);
     if (!raw) return null;
     const saved = JSON.parse(raw);
-    const layout = getLayoutConfig(saved?.layout);
-    const gameMode = saved?.gameMode === 'memory' ? 'memory' : 'normal';
+    const layout = getLayoutConfig(saved && saved.layout);
+    const gameMode = saved && saved.gameMode === 'memory' ? 'memory' : 'normal';
     if (!saved || layout.key !== saved.layout) return null;
     if (!Array.isArray(saved.tiles) || saved.tiles.length !== layout.pairCount * 2) return null;
 
@@ -117,8 +118,8 @@ function loadSavedGame() {
       pairCount: layout.pairCount,
       layoutLabel: layout.label,
       hintLabel: layout.hintLabel,
-      shapeStyle: saved.shapeStyle ?? null,
-      shapeLabel: saved.shapeLabel ?? '',
+      shapeStyle: saved.shapeStyle == null ? null : saved.shapeStyle,
+      shapeLabel: saved.shapeLabel == null ? '' : saved.shapeLabel,
       tiles: saved.tiles.map((tile) => ({
         symbol: tile.symbol,
         name: tile.name,
@@ -139,7 +140,7 @@ function loadSavedGame() {
       moves: typeof saved.moves === 'number' ? saved.moves : 0,
       matches: typeof saved.matches === 'number' ? saved.matches : 0,
       complete: Boolean(saved.complete),
-      lastAction: saved.lastAction ?? 'idle'
+      lastAction: saved.lastAction == null ? 'idle' : saved.lastAction
     }, typeof saved.elapsedMs === 'number' ? saved.elapsedMs : 0);
   } catch {
     return null;
@@ -171,8 +172,8 @@ function saveGame() {
         hinted: tile.hinted
       })),
       gameMode: state.gameMode,
-      shapeStyle: state.shapeStyle ?? null,
-      shapeLabel: state.shapeLabel ?? '',
+      shapeStyle: state.shapeStyle == null ? null : state.shapeStyle,
+      shapeLabel: state.shapeLabel == null ? '' : state.shapeLabel,
       selectedIds: state.selectedIds,
       hintPairIds: state.hintPairIds,
       moves: state.moves,
@@ -385,8 +386,10 @@ function setStatus(message, persistMs = 0) {
 function handleShortcuts(event) {
   if (event.defaultPrevented) return;
   const target = event.target;
-  const tagName = target?.tagName?.toLowerCase?.();
-  if (tagName === 'input' || tagName === 'textarea' || target?.isContentEditable) return;
+  const tagName = target && target.tagName && typeof target.tagName.toLowerCase === 'function'
+    ? target.tagName.toLowerCase()
+    : '';
+  if (tagName === 'input' || tagName === 'textarea' || (target && target.isContentEditable)) return;
 
   if (event.key.toLowerCase() === 'n') {
     event.preventDefault();
@@ -537,7 +540,10 @@ function onTileClick(tileId) {
     candidate &&
     !candidate.removed &&
     isTileFree(state, candidate) &&
-    state.tiles.find((tile) => tile.uid === previousSelection[0])?.pairId === candidate.pairId;
+    (() => {
+      const previousTile = state.tiles.find((tile) => tile.uid === previousSelection[0]);
+      return previousTile ? previousTile.pairId === candidate.pairId : false;
+    })();
 
   if (isPotentialMatch) {
     const pairIds = [previousSelection[0], tileId];
@@ -604,10 +610,12 @@ soundToggleButton.addEventListener('click', () => {
   saveSoundPreference(soundEnabled);
   render();
 });
-playAgainButton?.addEventListener('click', (event) => {
-  event.preventDefault();
-  resetGame(currentLayout);
-});
+if (playAgainButton) {
+  playAgainButton.addEventListener('click', (event) => {
+    event.preventDefault();
+    resetGame(currentLayout);
+  });
+}
 layoutButtons.forEach((button) => {
   button.addEventListener('click', () => resetGame(button.dataset.layout));
 });
@@ -619,7 +627,7 @@ window.addEventListener('keydown', handleShortcuts);
 const savedGame = loadSavedGame();
 if (savedGame) {
   currentLayout = savedGame.layout;
-  currentGameMode = savedGame.gameMode ?? loadGameModePreference();
+  currentGameMode = savedGame.gameMode == null ? loadGameModePreference() : savedGame.gameMode;
   state = savedGame;
   startTimer();
   render();

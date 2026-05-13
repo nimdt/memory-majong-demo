@@ -88,7 +88,7 @@ export const GAME_MODES = {
 export const DEFAULT_GAME_MODE = 'memory';
 
 export function getLayoutConfig(layoutKey = DEFAULT_LAYOUT) {
-  return LAYOUTS[layoutKey] ?? LAYOUTS[DEFAULT_LAYOUT];
+  return LAYOUTS[layoutKey] || LAYOUTS[DEFAULT_LAYOUT];
 }
 
 const SHAPE_STYLES = ['diamond', 'h', 'building', 'butterfly', 'spider', 'pagoda'];
@@ -111,7 +111,7 @@ function shuffle(items, random = Math.random) {
 }
 
 export function getGameModeConfig(gameMode = DEFAULT_GAME_MODE) {
-  return GAME_MODES[gameMode] ?? GAME_MODES[DEFAULT_GAME_MODE];
+  return GAME_MODES[gameMode] || GAME_MODES[DEFAULT_GAME_MODE];
 }
 
 function clamp(value, min, max) {
@@ -322,12 +322,12 @@ function normalizeCoords(coords) {
 }
 
 function generateShapeCoords(tileCount, random = Math.random, forcedStyle = null) {
-  const style = forcedStyle ?? SHAPE_STYLES[Math.floor(random() * SHAPE_STYLES.length)];
+  const style = forcedStyle == null ? SHAPE_STYLES[Math.floor(random() * SHAPE_STYLES.length)] : forcedStyle;
   const layers = layerBreakdown(tileCount);
-  const coords = layers.flatMap((count, layerIndex) => generateLayerCoords(count, style, layerIndex));
+  const coords = layers.reduce((allCoords, count, layerIndex) => allCoords.concat(generateLayerCoords(count, style, layerIndex)), []);
   return {
     style,
-    shapeLabel: SHAPE_LABELS[style] ?? style,
+    shapeLabel: SHAPE_LABELS[style] || style,
     coords: normalizeCoords(coords)
   };
 }
@@ -335,10 +335,13 @@ function generateShapeCoords(tileCount, random = Math.random, forcedStyle = null
 function buildInitialState(layout, gameMode = DEFAULT_GAME_MODE, random = Math.random) {
   const mode = getGameModeConfig(gameMode);
   const pool = shuffle(TILE_SET.slice(0, layout.pairCount), random);
-  const pairDefs = shuffle(pool.flatMap((tile, pairId) => ([
-    { ...tile, pairId, uid: `${pairId}-a` },
-    { ...tile, pairId, uid: `${pairId}-b` }
-  ])), random);
+  const pairDefs = shuffle(pool.reduce((pairs, tile, pairId) => {
+    pairs.push(
+      { ...tile, pairId, uid: `${pairId}-a` },
+      { ...tile, pairId, uid: `${pairId}-b` }
+    );
+    return pairs;
+  }, []), random);
 
   const shape = generateShapeCoords(layout.pairCount * 2, random);
   const tiles = shape.coords.map(([x, y, z], index) => ({
@@ -372,7 +375,9 @@ function buildInitialState(layout, gameMode = DEFAULT_GAME_MODE, random = Math.r
 
 export function createInitialState(layoutKey = DEFAULT_LAYOUT, random = Math.random, options = {}) {
   const layout = getLayoutConfig(layoutKey);
-  const gameMode = typeof options === 'string' ? options : (options.gameMode ?? DEFAULT_GAME_MODE);
+  const gameMode = typeof options === 'string'
+    ? options
+    : (options && options.gameMode != null ? options.gameMode : DEFAULT_GAME_MODE);
   let fallback = buildInitialState(layout, gameMode, random);
 
   for (let attempt = 0; attempt < 24; attempt += 1) {
@@ -436,7 +441,8 @@ export function reshuffleRemaining(state, random = Math.random) {
 }
 
 export function getTile(state, tileId) {
-  return state.tiles.find((tile) => tile.uid === tileId) ?? null;
+  const tile = state.tiles.find((entry) => entry.uid === tileId);
+  return tile || null;
 }
 
 export function isTileFree(state, tileOrId) {
@@ -466,7 +472,7 @@ export function getFreeMatchingPairs(state) {
   const freeTiles = getFreeTiles(state);
   const byPair = new Map();
   for (const tile of freeTiles) {
-    const bucket = byPair.get(tile.pairId) ?? [];
+    const bucket = byPair.get(tile.pairId) || [];
     bucket.push(tile);
     byPair.set(tile.pairId, bucket);
   }
