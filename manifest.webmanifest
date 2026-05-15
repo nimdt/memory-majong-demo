@@ -1,0 +1,19 @@
+{
+  "name": "Memory Majong",
+  "short_name": "Majong",
+  "description": "A calm Mahjong table with classic matching, memory mode, and installable offline-friendly play.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#13261d",
+  "theme_color": "#13261d",
+  "icons": [
+    {
+      "src": "./icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

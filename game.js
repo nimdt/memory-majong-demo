@@ -16,7 +16,7 @@ const BEST_KEY = 'mahjong-solitaire-deluxe-best-v1';
 const SOUND_KEY = 'mahjong-solitaire-deluxe-sound-v1';
 const LAYOUT_KEY = 'mahjong-solitaire-deluxe-layout-v1';
 const GAME_MODE_KEY = 'mahjong-solitaire-deluxe-game-mode-v1';
-const SAVE_KEY = 'memory-majong-save-v2';
+const SAVE_KEY = 'memory-majong-save-v3';
 
 const boardEl = document.querySelector('#board');
 const movesEl = document.querySelector('#moves');
@@ -38,6 +38,18 @@ const winSummary = document.querySelector('#win-summary');
 const layoutButtons = [...document.querySelectorAll('.layout-button')];
 const gameModeButtons = [...document.querySelectorAll('.game-mode-button')];
 
+const TILE_PATTERN_POSITIONS = {
+  1: ['center'],
+  2: ['top-center', 'bottom-center'],
+  3: ['top-center', 'center', 'bottom-center'],
+  4: ['top-left', 'top-right', 'bottom-left', 'bottom-right'],
+  5: ['top-left', 'top-right', 'center', 'bottom-left', 'bottom-right'],
+  6: ['top-left', 'mid-left', 'bottom-left', 'top-right', 'mid-right', 'bottom-right'],
+  7: ['top-center', 'top-left', 'mid-left', 'bottom-left', 'top-right', 'mid-right', 'bottom-right'],
+  8: ['top-center', 'bottom-center', 'top-left', 'mid-left', 'bottom-left', 'top-right', 'mid-right', 'bottom-right'],
+  9: ['top-left', 'top-center', 'top-right', 'mid-left', 'center', 'mid-right', 'bottom-left', 'bottom-center', 'bottom-right']
+};
+
 let currentLayout = loadLayoutPreference();
 let currentGameMode = loadGameModePreference();
 let state = hydrateTimingState(createInitialState(currentLayout, Math.random, { gameMode: currentGameMode }));
@@ -48,6 +60,29 @@ let timerInterval = null;
 let statusOverride = '';
 let mismatchTimeoutId = null;
 let pairAnimationTimeoutId = null;
+
+function inferTileMetadata(tile) {
+  const next = { ...tile };
+  if ((next.suit === 'circle' || next.suit === 'bamboo') && next.rank == null && typeof next.name === 'string') {
+    const rankWord = next.name.split(' ')[0].toLowerCase();
+    const rankMap = {
+      one: 1,
+      two: 2,
+      three: 3,
+      four: 4,
+      five: 5,
+      six: 6,
+      seven: 7,
+      eight: 8,
+      nine: 9
+    };
+    next.rank = rankMap[rankWord] == null ? null : rankMap[rankWord];
+  }
+  if ((next.suit === 'wind' || next.suit === 'dragon') && next.honor == null && typeof next.name === 'string') {
+    next.honor = next.name.toLowerCase().replace(/\s+/g, '-');
+  }
+  return next;
+}
 
 function hydrateTimingState(targetState, elapsedMs = 0) {
   targetState.elapsedMs = Number.isFinite(elapsedMs) ? Math.max(0, elapsedMs) : 0;
@@ -120,21 +155,26 @@ function loadSavedGame() {
       hintLabel: layout.hintLabel,
       shapeStyle: saved.shapeStyle == null ? null : saved.shapeStyle,
       shapeLabel: saved.shapeLabel == null ? '' : saved.shapeLabel,
-      tiles: saved.tiles.map((tile) => ({
-        symbol: tile.symbol,
-        name: tile.name,
-        suit: tile.suit,
-        accent: tile.accent,
-        pairId: tile.pairId,
-        uid: tile.uid,
-        x: tile.x,
-        y: tile.y,
-        z: tile.z,
-        revealed: typeof tile.revealed === 'boolean' ? tile.revealed : gameMode !== 'memory',
-        removed: Boolean(tile.removed),
-        selected: Boolean(tile.selected),
-        hinted: Boolean(tile.hinted)
-      })),
+      tiles: saved.tiles.map((tile) => {
+        const withMetadata = inferTileMetadata(tile);
+        return {
+          symbol: withMetadata.symbol,
+          name: withMetadata.name,
+          suit: withMetadata.suit,
+          accent: withMetadata.accent,
+          rank: withMetadata.rank == null ? null : withMetadata.rank,
+          honor: withMetadata.honor == null ? null : withMetadata.honor,
+          pairId: withMetadata.pairId,
+          uid: withMetadata.uid,
+          x: withMetadata.x,
+          y: withMetadata.y,
+          z: withMetadata.z,
+          revealed: typeof withMetadata.revealed === 'boolean' ? withMetadata.revealed : gameMode !== 'memory',
+          removed: Boolean(withMetadata.removed),
+          selected: Boolean(withMetadata.selected),
+          hinted: Boolean(withMetadata.hinted)
+        };
+      }),
       selectedIds: Array.isArray(saved.selectedIds) ? saved.selectedIds : [],
       hintPairIds: Array.isArray(saved.hintPairIds) ? saved.hintPairIds : [],
       moves: typeof saved.moves === 'number' ? saved.moves : 0,
@@ -161,6 +201,8 @@ function saveGame() {
         name: tile.name,
         suit: tile.suit,
         accent: tile.accent,
+        rank: tile.rank == null ? null : tile.rank,
+        honor: tile.honor == null ? null : tile.honor,
         pairId: tile.pairId,
         uid: tile.uid,
         x: tile.x,
@@ -424,6 +466,30 @@ function handleShortcuts(event) {
   }
 }
 
+function renderPipMarkup(tile) {
+  const positions = TILE_PATTERN_POSITIONS[tile.rank] || ['center'];
+  return positions.map((position) => `
+    <span class="tile-pip tile-pip--${tile.suit} tile-pip--${position}" aria-hidden="true">
+      <span class="tile-pip-core"></span>
+    </span>
+  `).join('');
+}
+
+function renderHonorMarkup(tile) {
+  return `
+    <span class="tile-honor tile-honor--${tile.accent}" aria-hidden="true">
+      <span class="tile-honor-mark">${tile.symbol}</span>
+    </span>
+  `;
+}
+
+function renderTileFaceMarkup(tile) {
+  if (tile.suit === 'circle' || tile.suit === 'bamboo') {
+    return renderPipMarkup(tile);
+  }
+  return renderHonorMarkup(tile);
+}
+
 function render() {
   const layout = getLayoutConfig(currentLayout);
   const freePairs = getFreePairCount();
@@ -489,7 +555,7 @@ function render() {
       <span class="tile-front-edge" aria-hidden="true"></span>
       <span class="tile-face">
         <span class="tile-ink">
-          <span class="tile-glyph" aria-hidden="true">${tile.symbol}</span>
+          ${renderTileFaceMarkup(tile)}
         </span>
       </span>
     `;
@@ -623,6 +689,14 @@ gameModeButtons.forEach((button) => {
   button.addEventListener('click', () => setGameMode(button.dataset.gameMode));
 });
 window.addEventListener('keydown', handleShortcuts);
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch(() => {
+      // ignore service worker registration failures
+    });
+  });
+}
 
 const savedGame = loadSavedGame();
 if (savedGame) {
